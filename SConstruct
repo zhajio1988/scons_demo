@@ -86,7 +86,7 @@ C_SRC_LIST = get_path_files(C_DIRS, '*.c') + C_FILES
 
 ###################################################################################
 # ASM source dirs config
-AS_DIRS = []
+AS_DIRS = ["lib/init"]
 #AS_DIRS.append('src')
 
 # ASM source files config
@@ -227,7 +227,7 @@ for src in lib_sources:
     obj_filename = os.path.basename(src).replace('.s', '.o')
     obj_path = os.path.join(current_dir, obj_filename)
     print("obj_path", obj_path)
-    objects.append(env.Object(target=obj_path, source=src))
+    #objects.append(env.Object(target=obj_path, source=src))
     print("objects", objects)
 
 
