@@ -10,7 +10,6 @@ ENTRY(__start)
 SECTIONS {
     .text :
     {
-        crt0.o (.text)
         *(.text*)
     } >MEM1
 

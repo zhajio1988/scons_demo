@@ -1,6 +1,5 @@
 import os
 
-
 def find_sources(directory, extensions, depth=0):
     """
     Find files with given extensions up to a specified depth in the directory.
@@ -86,7 +85,7 @@ C_SRC_LIST = get_path_files(C_DIRS, '*.c') + C_FILES
 
 ###################################################################################
 # ASM source dirs config
-AS_DIRS = ["lib/init"]
+AS_DIRS = []
 #AS_DIRS.append('src')
 
 # ASM source files config
@@ -107,18 +106,19 @@ CPP_DEFINES = []
 
 # C generate define
 C_FLAGS = []
-C_FLAGS.append('-O1')
-C_FLAGS.append('-g')
+#C_FLAGS.append('-O1')
+#C_FLAGS.append('-g')
+C_FLAGS.append('-mtune=c920 -march=rv64imafdcv_zicbom_zicbop_zicboz_zicond1p0_zihintntl0p2_zihintpause_zawrs_zfa0p1_zfbfmin0p8_zfh_zca_zcb_zcd_zba_zbb_zbc_zbs_zvfbfmin0p8_zvfbfwma0p8_svinval_svpbmt_xtheadc_xtheadvdot -mabi=lp64d  -c -O2 --specs=nano.specs'.split())
 #C_FLAGS.append('-std=c99')
 
 # C and C++ generate define
 CC_FLAGS = []
-CC_FLAGS.append('-Wall')
+#CC_FLAGS.append('-Wall')
 
 
 # ASM generate define
 AS_FLAGS = []
-AS_FLAGS.append('-g')
+#AS_FLAGS.append('-g')
 
 # Link Config
 LINK_FLAGS = "-T./lib/init/linker.lcf -nostartfiles  -mtune=c920 -march=rv64imafdcv_zicbom_zicbop_zicboz_zicond1p0_zihintntl0p2_zihintpause_zawrs_zfa0p1_zfbfmin0p8_zfh_zca_zcb_zcd_zba_zbb_zbc_zbs_zvfbfmin0p8_zvfbfwma0p8_svinval_svpbmt_xtheadc_xtheadvdot -mabi=lp64d"
@@ -187,7 +187,7 @@ env.Append(CPPPATH=CPP_PATH)
 # 'ASCOM': '$AS $ASFLAGS -o $TARGET $SOURCES'
 
 # Step2.0: General options. $ASFLAGS.
-env.Append(ASFLAGS=AS_FLAGS)
+env.Append(ASFLAGS=C_FLAGS)
 env['ASCOM'] = env['ASPPCOM']
 
 ###################################################################################
@@ -216,19 +216,16 @@ env.Append(LIBS=LIBS_FILES)
 # Step4: Compile Object files, use:
 #        1. <$CCCOM>: For c code compile
 #        2. <$ASCOM>: For asm code compile
-current_dir = os.getcwd()
+current_dir = 'build/init'
 lib_sources = find_sources("lib/init", ('.c', '.s', '.S'), 1)
 
 # Create objects for each source file
 
 objects = []
 for src in lib_sources:
-    print("debug point src", src)
     obj_filename = os.path.basename(src).replace('.s', '.o')
     obj_path = os.path.join(current_dir, obj_filename)
-    print("obj_path", obj_path)
-    #objects.append(env.Object(target=obj_path, source=src))
-    print("objects", objects)
+    objects.append(env.Object(target=obj_path, source=src))
 
 
 c_objs = env.Object(C_SRC_LIST)
@@ -237,11 +234,33 @@ as_objs = env.Object(AS_SRC_LIST)
 ###################################################################################
 # Step5: Compile target <.elf>, use <$LINKCOM>.
 target = env.Program(target = TARGET_WITHOUT_SUFFIX, source=[c_objs, as_objs, objects])
+env['target'] = target
 
 # Other compile target.
-env.Command(TARGET_WITHOUT_SUFFIX + '.bin', target, OBJCPY + ' -v -O binary $SOURCE $TARGET')
-env.Command(TARGET_WITHOUT_SUFFIX + '.lst', target, OBJDUMP + ' --source --all-headers --demangle --line-numbers --wide $SOURCE > $TARGET')
-env.Command(TARGET_WITHOUT_SUFFIX + '.size', target, SIZE + ' --format=berkeley $SOURCE')
+#env.Command(TARGET_WITHOUT_SUFFIX + '.bin', target, OBJCPY + ' -v -O binary $SOURCE $TARGET')
+#env.Command(TARGET_WITHOUT_SUFFIX + '.lst', target, OBJDUMP + ' --source --all-headers --demangle --line-numbers --wide $SOURCE > $TARGET')
+#env.Command(TARGET_WITHOUT_SUFFIX + '.size', target, SIZE + ' --format=berkeley $SOURCE')
 
+SC_ROOT=os.getcwd()
+CONVERT=f'{SC_ROOT}/lib/bin/Srec2vmem'
+OBJDUMPFLAGS='-S -Mnumeric'
+HEXFLAGS='-O srec'
+
+inst_hex = OBJCPY + f' {HEXFLAGS} {os.path.join(SC_ROOT, str("$TARGET"))} -j .text* -j .rodata* -j .eh_frame* main_inst.hex;'
+data_hex = OBJCPY + f' {HEXFLAGS} {os.path.join(SC_ROOT, str("$TARGET"))} -j .data* -j .bss -j .COMMON main_data.hex;'
+test_hex = OBJCPY + f' {HEXFLAGS} {os.path.join(SC_ROOT, str("$TARGET"))} main.hex;'
+inst_pat = CONVERT + f' main_inst.hex inst.pat;'
+data_pat = CONVERT + f' main_data.hex data.pat;'
+test_pat = CONVERT + f' main.hex case.pat;'
+
+post_action = 'cd build;' + OBJDUMP + f' -D {OBJDUMPFLAGS} {os.path.join(SC_ROOT, str("$TARGET"))} > main.obj;'
+post_action += inst_hex
+post_action += data_hex
+post_action += test_hex
+post_action += inst_pat
+post_action += data_pat
+post_action += test_pat
+
+env.AddPostAction(target, post_action)
 # Dump() env params, if need.
 #print(env.Dump())
