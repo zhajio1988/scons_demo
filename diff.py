@@ -33,5 +33,5 @@ def compare_directories(dir1, dir2):
 
 # Ê¹ÓÃÊ¾Àý
 dir1 = '/ssd_fes/jiongz/desktop/github/sifive/scons_demo'
-dir2 = '/ssd_fes/jiongz/soc_dv/pc801/pc801_c920_ip_vv_test/pc801_c920_ip_vv/pico_dev/smart_run/work'
+dir2 = '/ssd_fes/jiongz/desktop/github/smart_run_work'
 compare_directories(dir1, dir2)

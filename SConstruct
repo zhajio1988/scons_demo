@@ -97,7 +97,7 @@ AS_SRC_LIST = get_path_files(AS_DIRS, '*.s') + AS_FILES
 
 ###################################################################################
 # -I, Include path config
-CPP_PATH = ['lib/clib/', 'lib/newlib_wrap/', 'lib/init']
+CPP_PATH = ['lib/init', 'lib/clib/', 'lib/newlib_wrap/']
 #CPP_PATH.append('inc')
 
 # -D, Preprocess Define
@@ -233,7 +233,7 @@ as_objs = env.Object(AS_SRC_LIST)
 
 ###################################################################################
 # Step5: Compile target <.elf>, use <$LINKCOM>.
-target = env.Program(target = TARGET_WITHOUT_SUFFIX, source=[c_objs, as_objs, objects])
+target = env.Program(target = TARGET_WITHOUT_SUFFIX, source=[objects, c_objs, as_objs])
 env['target'] = target
 
 # Other compile target.
